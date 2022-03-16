@@ -38,7 +38,7 @@ param pubkeydata string
 param script64 string
 
 
-module jumpbox './JVM.bicep' = {
+module jumpbox './Jumpbox.bicep' = {
   name: 'jumpbox'
   params: {
     
