@@ -31,3 +31,19 @@ resource stg 'Microsoft.Storage/storageAccounts@2021-04-01' = {
 }
 
 output storageEndpoint object = stg.properties.primaryEndpoints
+
+
+param location string
+param pubkeydata string
+param script64 string
+
+
+module jumpbox './JVM.bicep' = {
+  name: 'jumpbox'
+  params: {
+    
+    location:location
+    publicKey: pubkeydata
+    script64: script64
+  }
+}
