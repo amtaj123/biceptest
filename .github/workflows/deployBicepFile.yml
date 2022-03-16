@@ -1,4 +1,10 @@
-on: [push]
+on: 
+ workflow_dispatch:
+    inputs:
+        resourceGroupName:
+          description: 'Name of the resource group'     
+          required: true
+          default: 'rgspoke-postit-dev-eus2-001'
 name: Azure ARM
 jobs:
   build-and-deploy:
@@ -7,18 +13,45 @@ jobs:
 
       # Checkout code
     - uses: actions/checkout@main
+    
+    - run: |
+        # make file runnable, might not be necessary
+        chmod +x "${GITHUB_WORKSPACE}/install-azure-cli.sh"
+        # run script
+        "${GITHUB_WORKSPACE}/install-azure-cli.sh"
+        # or
+        # "${{ format('{0}/install-azure-cli.sh', github.workspace) }}"
 
       # Log into Azure
     - uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Azure CLI script
+      uses: azure/CLI@v1
+      with:
+        azcliversion: 2.30.0
+        inlineScript: |
+          az group create -l EastUS2 -n ${{ github.event.inputs.resourceGroupName }}
+        
+    - name: Generate SSH Keys
+      run: |
+        ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa <<< y
+        #ssh-public-key=$(cat ~/.ssh/id_rsa.pub)
+        #ssh-private-key=$(cat ~/.ssh/id_rsa)
+        echo "::set-output name=ssh-public-key::$(cat ~/.ssh/id_rsa.pub)\n"
+        echo "::set-output name=ssh-private-key::$(cat ~/.ssh/id_rsa)\n"
+       # echo "ssh-public-keys="$(cat ~/.ssh/id_rsa.pub)" >> $GITHUB_ENV
+      id: ssh-keys
 
       # Deploy Bicep file
     - name: deploy
       uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
-        resourceGroupName: ${{ secrets.AZURE_RG }}
+        resourceGroupName: ${{ github.event.inputs.resourceGroupName }}
         template: ./main.bicep
-        parameters: storagePrefix=ghrun
+        parameters: 
+         soragePrefix=ghrun
+         publickeydata=${{ steps.ssh-keys.output.ssh-public-key }}
         failOnStdErr: false
