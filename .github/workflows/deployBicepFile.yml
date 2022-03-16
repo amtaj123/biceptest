@@ -4,7 +4,7 @@ on:
         resourceGroupName:
           description: 'Name of the resource group'     
           required: true
-          default: 'rgspoke-postit-dev-eus2-001'
+          default: 'rg-postit-hub-eus2-001'
 name: Azure ARM
 jobs:
   build-and-deploy:
